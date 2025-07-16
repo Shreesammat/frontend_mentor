@@ -15,119 +15,90 @@ const EditableList = ({ section }: { section: SectionArrayKeys }) => {
   const [tempText, setTempText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
-  const handleDelete = (index: number) => {
-    // Close editing mode if we're editing the item being deleted
-    if (editingIndex === index) {
-      setEditingIndex(null);
-      setTempText('');
-    } else if (editingIndex !== null && editingIndex > index) {
-      // Adjust editing index if we're editing an item after the deleted one
-      setEditingIndex(editingIndex - 1);
-    }
-    deleteLine(section, index);
-  };
-
-  const handleUpdate = (index: number, text: string) => {
-    if (text.trim()) {
-      updateLine(section, index, text.trim());
-    }
-    setEditingIndex(null);
-    setTempText('');
-  };
-
-  const handleAdd = (text: string) => {
-    if (text.trim()) {
-      addLine(section, text.trim());
-    }
-    setTempText('');
-    setIsAdding(false);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingIndex(null);
-    setTempText('');
-  };
-
-  const handleCancelAdd = () => {
-    setTempText('');
-    setIsAdding(false);
-  };
-
   return (
     <div className='flex flex-col space-y-2 w-full max-h-40'>
       {(list || []).map((line, index) => (
-        <div key={`${section}-${index}-${line.substring(0, 10)}`}>
+        <div key={`${section}-${line}-${index}`}>
           {editingIndex === index ? (
-            <div className="w-full flex flex-row text-sm items-start gap-1">
+            <div className="w-full flex flex-row text-sm items-start">
               <textarea
                 className="w-full resize-none border rounded p-1"
                 value={tempText}
                 onChange={(e) => setTempText(e.target.value)}
-                onBlur={() => handleUpdate(index, tempText)}
+                onBlur={() => {
+                  if(tempText.trim()) updateLine(section, index, tempText.trim());
+                  setEditingIndex(null);
+                  setTempText('');
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    handleUpdate(index, tempText);
-                  } else if (e.key === 'Escape') {
-                    handleCancelEdit();
+                    if(tempText.trim()) updateLine(section, index, tempText.trim());
+                    setEditingIndex(null);
+                    setTempText('');
+                  } else if(e.key == 'Escape') {
+                    setEditingIndex(null);
+                    setTempText('');
                   }
                 }}
                 autoFocus
               />
               <Button
-                onClick={() => handleDelete(index)}
+                onClick={() => {
+                  setEditingIndex(null);
+                  setTempText('');
+                  deleteLine(section, index);
+                }}
                 variant="destructive"
-                className="text-xs cursor-pointer rounded-xl p-1 min-w-6 h-6"
+                className="text-xs cursor-pointer rounded-xl p-1"
               >
-                ×
+                -
               </Button>
             </div>
           ) : (
-            <div className="w-full flex flex-row items-start gap-1">
-              <div
-                className="p-1 flex-1 cursor-pointer"
-                onClick={() => {
-                  setEditingIndex(index);
-                  setTempText(line);
-                }}
-              >
-                <ListItem index={index}>{line}</ListItem>
-              </div>
-              <Button
-                onClick={() => handleDelete(index)}
-                variant="destructive"
-                className="text-xs cursor-pointer rounded-xl p-1 min-w-6 h-6"
-              >
-                ×
-              </Button>
+            <div
+              className="p-1"
+              onClick={() => {
+                setEditingIndex(index);
+                setTempText(line);
+              }}
+            >
+              <ListItem index={index}>{line}</ListItem>
             </div>
           )}
         </div>
       ))}
 
       {isAdding ? (
-        <div className="mt-2 flex flex-row items-start gap-1">
+        <div className="mt-2 flex flex-row items-start">
           <textarea
             className="w-full resize-none border rounded p-1"
             value={tempText}
             onChange={(e) => setTempText(e.target.value)}
-            onBlur={() => handleAdd(tempText)}
+            onBlur={() => {
+              if (tempText.trim()) addLine(section, tempText.trim());
+              setTempText('');
+              setIsAdding(false);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                handleAdd(tempText);
-              } else if (e.key === 'Escape') {
-                handleCancelAdd();
+                if (tempText.trim()) addLine(section, tempText.trim());
+                setTempText('');
+                setIsAdding(false);
               }
             }}
             autoFocus
           />
           <Button
-            onClick={handleCancelAdd}
+            onClick={() => {
+              setTempText('');
+              setIsAdding(false);
+            }}
             variant="destructive"
-            className="text-xs cursor-pointer rounded-xl p-1 ml-1 min-w-6 h-6"
+            className="text-xs cursor-pointer rounded-xl p-1 ml-1"
           >
-            ×
+            -
           </Button>
         </div>
       ) : (
@@ -138,10 +109,12 @@ const EditableList = ({ section }: { section: SectionArrayKeys }) => {
             onClick={() => {
               setIsAdding(true);
               setTempText('');
+              console.log(list)
             }}
           >
             +
           </Button>
+          
         </div>
       )}
     </div>
