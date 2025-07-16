@@ -15,15 +15,28 @@ const EditableList = ({ section }: { section: SectionArrayKeys }) => {
   const [tempText, setTempText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
+  const handleDelete = (index: number) => {
+    // If we're editing the item being deleted, exit edit mode
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setTempText('');
+    } 
+    // If we're editing an item after the one being deleted, adjust the editing index
+    else if (editingIndex !== null && editingIndex > index) {
+      setEditingIndex(editingIndex - 1);
+    }
+    deleteLine(section, index);
+  };
+
   return (
     <div className='flex flex-col space-y-2 w-full max-h-40'>
       {(list || []).map((line, index) => (
-        <div key={`${section}-${line}-${index}`}>
+        <div key={`${section}-${line.substring(0, 20)}-${list.length}-${index}`} className="flex flex-row items-start gap-1">
           {editingIndex === index ? (
-            <div className="w-full flex flex-row text-sm items-start">
+            <>
               <textarea
-                className="w-full resize-none border rounded p-1"
-                value={tempText}
+                className="w-full resize-none border rounded p-1 text-sm"
+                value={tempText}  
                 onChange={(e) => setTempText(e.target.value)}
                 onBlur={() => {
                   if(tempText.trim()) updateLine(section, index, tempText.trim());
@@ -36,7 +49,7 @@ const EditableList = ({ section }: { section: SectionArrayKeys }) => {
                     if(tempText.trim()) updateLine(section, index, tempText.trim());
                     setEditingIndex(null);
                     setTempText('');
-                  } else if(e.key == 'Escape') {
+                  } else if(e.key === 'Escape') {
                     setEditingIndex(null);
                     setTempText('');
                   }
@@ -44,35 +57,42 @@ const EditableList = ({ section }: { section: SectionArrayKeys }) => {
                 autoFocus
               />
               <Button
-                onClick={() => {
-                  setEditingIndex(null);
-                  setTempText('');
-                  deleteLine(section, index);
-                }}
+                onClick={() => handleDelete(index)}
                 variant="destructive"
-                className="text-xs cursor-pointer rounded-xl p-1"
+                size="sm"
+                className="text-xs px-2 py-1 h-8 w-8"
               >
-                -
+                ×
               </Button>
-            </div>
+            </>
           ) : (
-            <div
-              className="p-1"
-              onClick={() => {
-                setEditingIndex(index);
-                setTempText(line);
-              }}
-            >
-              <ListItem index={index}>{line}</ListItem>
-            </div>
+            <>
+              <div
+                className="p-1 flex-1 cursor-pointer hover:bg-gray-50 rounded"
+                onClick={() => {
+                  setEditingIndex(index);
+                  setTempText(line);
+                }}
+              >
+                <ListItem index={index}>{line}</ListItem>
+              </div>
+              <Button
+                onClick={() => handleDelete(index)}
+                variant="destructive"
+                size="sm"
+                className="text-xs px-2 py-1 h-8 w-8"
+              >
+                ×
+              </Button>
+            </>
           )}
         </div>
       ))}
 
       {isAdding ? (
-        <div className="mt-2 flex flex-row items-start">
+        <div className="mt-2 flex flex-row items-start gap-1">
           <textarea
-            className="w-full resize-none border rounded p-1"
+            className="w-full resize-none border rounded p-1 text-sm"
             value={tempText}
             onChange={(e) => setTempText(e.target.value)}
             onBlur={() => {
@@ -86,6 +106,9 @@ const EditableList = ({ section }: { section: SectionArrayKeys }) => {
                 if (tempText.trim()) addLine(section, tempText.trim());
                 setTempText('');
                 setIsAdding(false);
+              } else if(e.key === 'Escape') {
+                setTempText('');
+                setIsAdding(false);
               }
             }}
             autoFocus
@@ -95,10 +118,11 @@ const EditableList = ({ section }: { section: SectionArrayKeys }) => {
               setTempText('');
               setIsAdding(false);
             }}
-            variant="destructive"
-            className="text-xs cursor-pointer rounded-xl p-1 ml-1"
+            variant="outline"
+            size="sm"
+            className="text-xs px-2 py-1 h-8 w-8"
           >
-            -
+            ×
           </Button>
         </div>
       ) : (
@@ -109,12 +133,10 @@ const EditableList = ({ section }: { section: SectionArrayKeys }) => {
             onClick={() => {
               setIsAdding(true);
               setTempText('');
-              console.log(list)
             }}
           >
-            +
+            + Add Item
           </Button>
-          
         </div>
       )}
     </div>
